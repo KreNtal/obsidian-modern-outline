@@ -76,7 +76,7 @@ export class OverlayOutline {
 		if (this.headings.length === 0) return;
 
 		// Each heading is a row: dash + label. Hovering anywhere on the overlay
-		// fades in every label at once (Notion-style), via CSS :has().
+		// fades in every label at once, via CSS :has().
 		this.headings.forEach((h, i) => {
 			const row = overlay.createDiv({ cls: 'outline-row' });
 			row.dataset.index = String(i);

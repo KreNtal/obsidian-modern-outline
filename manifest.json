@@ -3,7 +3,7 @@
 	"name": "Modern Outline",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "A Notion-style outline panel for your notes",
-	"author": "",
+	"description": "A modern minimap outline for your notes",
+	"author": "KreNtal",
 	"isDesktopOnly": false
 }

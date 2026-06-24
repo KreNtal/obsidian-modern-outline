@@ -1,17 +1,26 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "obsidian-modern-outline",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "A modern minimap outline for Obsidian notes",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"lint": "eslint ."
+		"lint": "eslint .",
+		"fix": "eslint . --fix",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
-	"keywords": [],
-	"license": "0-BSD",
+	"author": "KreNtal",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/KreNtal/obsidian-modern-outline.git"
+	},
+	"bugs": {
+		"url": "https://github.com/KreNtal/obsidian-modern-outline/issues"
+	},
+	"homepage": "https://github.com/KreNtal/obsidian-modern-outline#readme",
+	"license": "MIT",
 	"devDependencies": {
 		"@types/node": "^16.11.6",
 		"esbuild": "0.25.5",
