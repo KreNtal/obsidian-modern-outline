@@ -9,6 +9,7 @@ export class OverlayOutline {
 	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 	private _enabled = true;
 	private scrollHandler: ((event: Event) => void) | null = null;
+	private animateNextRefresh = false;
 
 	constructor(private app: App, private plugin: ModernOutlinePlugin) {
 		this.registerGlobalScrollListener();
@@ -39,6 +40,28 @@ export class OverlayOutline {
 		this.currentView = view;
 		const overlay = view.contentEl.createDiv({ cls: 'modern-outline-overlay' });
 		this.overlayEl = overlay;
+
+		// Wheeling over the outline would otherwise hit the dashes (pointer-events:
+		// auto) and never reach the note's scroller (not a DOM ancestor of the
+		// overlay). Forward the wheel to the note so it scrolls as if the outline
+		// weren't there — and the strip itself never scrolls on its own.
+		overlay.addEventListener('wheel', (e: WheelEvent) => {
+			const scroller = this.getNoteScroller(view);
+			if (!scroller) return;
+			e.preventDefault();
+			// Normalize delta: 0 = pixels, 1 = lines, 2 = pages.
+			const factor = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? scroller.clientHeight : 1;
+			scroller.scrollTop += e.deltaY * factor;
+		}, { passive: false });
+
+		// On touch, just stop the strip from scrolling on its own.
+		overlay.addEventListener('touchmove', (e: Event) => {
+			if (overlay.classList.contains('overlay-scroll')) e.preventDefault();
+		}, { passive: false });
+
+		// Play the entry animation only when attaching to a (new) note, not on
+		// the content/layout refreshes that happen while editing.
+		this.animateNextRefresh = true;
 		this.scheduleRefresh(0);
 	}
 
@@ -65,6 +88,17 @@ export class OverlayOutline {
 		overlay.classList.add(
 			this.plugin.settings.sidebarSide === 'left' ? 'overlay-left' : 'overlay-right'
 		);
+		overlay.classList.add(`overlay-${this.plugin.settings.verticalPosition}`);
+		overlay.classList.add(`outline-dash-${this.plugin.settings.dashColor}`);
+		overlay.classList.add(`outline-label-${this.plugin.settings.labelColor}`);
+		overlay.classList.add(`outline-shape-${this.plugin.settings.dashShape}`);
+		overlay.classList.add(`outline-size-${this.plugin.settings.dashSize}`);
+		overlay.classList.add(`outline-font-${this.plugin.settings.labelFont}`);
+
+		const animate = this.plugin.settings.animationsEnabled;
+		if (!animate) overlay.classList.add('outline-no-anim');
+		if (animate && this.animateNextRefresh) overlay.classList.add('outline-animate-in');
+		this.animateNextRefresh = false;
 
 		if (!view.file) return;
 
@@ -75,17 +109,68 @@ export class OverlayOutline {
 
 		if (this.headings.length === 0) return;
 
+		// With many headings the cascade takes too long to finish — drop the
+		// stagger so labels/dashes animate together instead.
+		if (this.headings.length > 30) overlay.classList.add('outline-no-stagger');
+
 		// Each heading is a row: dash + label. Hovering anywhere on the overlay
 		// fades in every label at once, via CSS :has().
 		this.headings.forEach((h, i) => {
 			const row = overlay.createDiv({ cls: 'outline-row' });
 			row.dataset.index = String(i);
-			row.createSpan({ cls: 'outline-label', text: h.heading });
+			row.style.setProperty('--i', String(i)); // cascade order, inherited by dash + label
+			row.createSpan({ cls: `outline-label outline-label--h${h.level}`, text: h.heading });
 			row.createDiv({ cls: `outline-dash outline-dash--h${h.level}` });
 			row.addEventListener('click', () => this.scrollToHeading(h, view));
 		});
 
+		this.applyLayout(view);
 		this.highlightCurrentHeading();
+	}
+
+	// Computes how many rungs fit in the available height (reserving headroom so
+	// labels are never clipped mid-row). If all headings fit, spreads them with
+	// dynamic padding — no scroll. If there are more headings than fit even at
+	// minimum spacing, falls back to a scrollable strip that keeps the active
+	// rung in view, so no headings are ever dropped.
+	private applyLayout(view: MarkdownView) {
+		const overlay = this.overlayEl;
+		if (!overlay) return;
+
+		const containerHeight = view.contentEl.clientHeight;
+		const cap = containerHeight * 0.85;
+		const headroom = 10; // ≈ half a label height, top and bottom
+		const usable = Math.max(0, cap - headroom * 2);
+
+		const dashHeight = 2;
+		const padding = 6; // fixed row padding
+		const minRow = dashHeight + padding * 2; // 14px
+		const count = this.headings.length;
+
+		const maxRungs = Math.max(1, Math.floor(usable / minRow));
+		const overflowing = count > maxRungs;
+
+		overlay.style.paddingBlock = `${headroom}px`;
+		overlay.classList.toggle('overlay-scroll', overflowing);
+		overlay.style.maxHeight = overflowing ? `${cap}px` : '';
+
+		overlay.querySelectorAll<HTMLElement>('.outline-row').forEach(row => {
+			row.style.paddingBlock = `${padding}px`;
+		});
+	}
+
+	// The note's scrollable element — the CodeMirror scroller in editing mode,
+	// the preview container in reading mode.
+	private getNoteScroller(view: MarkdownView): HTMLElement | null {
+		if (view.getMode() === 'preview') {
+			const el = view.contentEl;
+			return (el.querySelector('.markdown-preview-view') as HTMLElement | null)
+				?? (el.querySelector('.markdown-reading-view') as HTMLElement | null);
+		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		const cm = (view.editor as any)?.cm;
+		return (cm?.scrollDOM as HTMLElement | undefined)
+			?? (view.contentEl.querySelector('.cm-scroller') as HTMLElement | null);
 	}
 
 	private scrollToHeading(h: HeadingInfo, view: MarkdownView) {
@@ -165,8 +250,20 @@ export class OverlayOutline {
 	}
 
 	setActiveItem(index: number) {
-		this.overlayEl?.querySelectorAll('.outline-row').forEach((el, i) => {
+		const overlay = this.overlayEl;
+		if (!overlay) return;
+
+		const rows = overlay.querySelectorAll<HTMLElement>('.outline-row');
+		rows.forEach((el, i) => {
 			el.classList.toggle('is-active', i === index);
 		});
+
+		// In scroll mode keep the active rung centered.
+		if (overlay.classList.contains('overlay-scroll')) {
+			const row = rows[index];
+			if (row) {
+				overlay.scrollTop = row.offsetTop + row.offsetHeight / 2 - overlay.clientHeight / 2;
+			}
+		}
 	}
 }

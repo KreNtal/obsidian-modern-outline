@@ -1,14 +1,33 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import type ModernOutlinePlugin from './main';
 
+export type ColorTheme = 'monochrome' | 'accent' | 'colorful' | 'headings';
+export type DashShape = 'rounded' | 'square';
+export type DashSize = 'small' | 'medium' | 'large';
+export type LabelFont = 'default' | 'text' | 'mono';
+
 export interface ModernOutlineSettings {
 	sidebarSide: 'left' | 'right';
+	verticalPosition: 'top' | 'center' | 'bottom';
+	dashColor: ColorTheme;
+	labelColor: ColorTheme;
+	dashShape: DashShape;
+	dashSize: DashSize;
+	labelFont: LabelFont;
+	animationsEnabled: boolean;
 	minHeadingLevel: number;
 	maxHeadingLevel: number;
 }
 
 export const DEFAULT_SETTINGS: ModernOutlineSettings = {
-	sidebarSide: 'right',
+	sidebarSide: 'left',
+	verticalPosition: 'center',
+	dashColor: 'monochrome',
+	labelColor: 'monochrome',
+	dashShape: 'rounded',
+	dashSize: 'medium',
+	labelFont: 'default',
+	animationsEnabled: true,
 	minHeadingLevel: 1,
 	maxHeadingLevel: 4,
 };
@@ -25,13 +44,15 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		containerEl.createEl('h3', { text: 'Appearance' });
+
 		new Setting(containerEl)
-			.setName('Overlay position')
+			.setName('Horizontal position')
 			.setDesc('Which side of the note to show the outline on')
 			.addDropdown(drop =>
 				drop
-					.addOption('right', 'Right')
 					.addOption('left', 'Left')
+					.addOption('right', 'Right')
 					.setValue(this.plugin.settings.sidebarSide)
 					.onChange(async (value) => {
 						this.plugin.settings.sidebarSide = value as 'left' | 'right';
@@ -39,6 +60,120 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 						this.plugin.refreshOutlineView();
 					})
 			);
+
+		new Setting(containerEl)
+			.setName('Vertical alignment')
+			.setDesc('Where to anchor the outline strip along the note height')
+			.addDropdown(drop =>
+				drop
+					.addOption('top', 'Top')
+					.addOption('center', 'Center')
+					.addOption('bottom', 'Bottom')
+					.setValue(this.plugin.settings.verticalPosition)
+					.onChange(async (value) => {
+						this.plugin.settings.verticalPosition = value as 'top' | 'center' | 'bottom';
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Animations')
+			.setDesc('Enable the cascade and fade animations of dashes and labels')
+			.addToggle(toggle =>
+				toggle
+					.setValue(this.plugin.settings.animationsEnabled)
+					.onChange(async (value) => {
+						this.plugin.settings.animationsEnabled = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		containerEl.createEl('h3', { text: 'Style' });
+
+		new Setting(containerEl)
+			.setName('Dash color')
+			.setDesc('Color style for the dashes')
+			.addDropdown(drop =>
+				drop
+					.addOption('monochrome', 'Monochrome')
+					.addOption('accent', 'Accent')
+					.addOption('colorful', 'Colorful')
+					.addOption('headings', 'Theme headings')
+					.setValue(this.plugin.settings.dashColor)
+					.onChange(async (value) => {
+						this.plugin.settings.dashColor = value as ColorTheme;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Label color')
+			.setDesc('Color style for the labels')
+			.addDropdown(drop =>
+				drop
+					.addOption('monochrome', 'Monochrome')
+					.addOption('accent', 'Accent')
+					.addOption('colorful', 'Colorful')
+					.addOption('headings', 'Theme headings')
+					.setValue(this.plugin.settings.labelColor)
+					.onChange(async (value) => {
+						this.plugin.settings.labelColor = value as ColorTheme;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Dash shape')
+			.setDesc('Corner style of the dashes')
+			.addDropdown(drop =>
+				drop
+					.addOption('rounded', 'Rounded')
+					.addOption('square', 'Square')
+					.setValue(this.plugin.settings.dashShape)
+					.onChange(async (value) => {
+						this.plugin.settings.dashShape = value as DashShape;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Dash size')
+			.setDesc('Overall size of the dashes')
+			.addDropdown(drop =>
+				drop
+					.addOption('small', 'Small')
+					.addOption('medium', 'Medium')
+					.addOption('large', 'Large')
+					.setValue(this.plugin.settings.dashSize)
+					.onChange(async (value) => {
+						this.plugin.settings.dashSize = value as DashSize;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Label font')
+			.setDesc('Font used for the heading labels')
+			.addDropdown(drop =>
+				drop
+					.addOption('default', 'Interface (default)')
+					.addOption('text', 'Editor text')
+					.addOption('mono', 'Monospace')
+					.setValue(this.plugin.settings.labelFont)
+					.onChange(async (value) => {
+						this.plugin.settings.labelFont = value as LabelFont;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		containerEl.createEl('h3', { text: 'Headings' });
 
 		new Setting(containerEl)
 			.setName('Minimum heading level')

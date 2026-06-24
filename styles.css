@@ -1,13 +1,59 @@
 /* Overlay container — positioned absolutely inside .view-content */
 .modern-outline-overlay {
+	/* Dash lengths per heading level — the single source of truth, reused for
+	   the dash widths and the row hover area. */
+	--dash-h1-width: 18px;
+	--dash-h2-width: 14px;
+	--dash-h3-width: 10px;
+	--dash-h4-width: 6px;
+	--dash-h5-width: 4px;
+	--dash-h6-width: 3px;
+	--dash-height: 2px;
+	--dash-radius: 2px;
+
+	/* Horizontal hover area per row (wider than any dash for easy hovering). */
+	--row-hover-width: 25px;
+
+	/* Label box width — reused for the hovered-row dot placement. */
+	--label-width: 140px;
+
+	/* Per-item delay for the cascade. Zeroed by .outline-no-stagger. */
+	--stagger: 16ms;
+
 	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
 	display: flex;
 	flex-direction: column;
 	gap: 0;
 	pointer-events: none;
 	z-index: 10;
+}
+
+/* Dense notes: the strip is scrolled programmatically (scrollTop) to keep the
+   active rung centered. The fixed width keeps the labels inside instead of
+   forcing a horizontal scrollbar, and the dashes stay pinned to the note edge.
+   The scrollbar is hidden. */
+.modern-outline-overlay.overlay-scroll {
+	width: 170px;
+	overflow-y: auto;
+	overflow-x: hidden;
+	scrollbar-width: none;
+}
+
+.modern-outline-overlay.overlay-scroll::-webkit-scrollbar {
+	display: none;
+}
+
+.modern-outline-overlay.overlay-top {
+	top: 60px;
+}
+
+.modern-outline-overlay.overlay-center {
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.modern-outline-overlay.overlay-bottom {
+	bottom: 24px;
 }
 
 .modern-outline-overlay.overlay-right {
@@ -21,24 +67,73 @@
 }
 
 /* One row per heading. Row height = dash height because the label is taken
-   out of flow (absolute), so dashes stay tightly spaced. */
+   out of flow (absolute), so dashes stay tightly spaced. A min-width equal to
+   the H1 dash gives every row the same, comfortable horizontal hover area —
+   even short dashes (H3/H4) are easy to hover. The dash is pinned to the note
+   edge inside the row via justify-content. */
 .outline-row {
 	position: relative;
 	display: flex;
 	align-items: center;
+	min-width: var(--row-hover-width);
 	padding-block: 6px;
 	cursor: pointer;
 	pointer-events: auto;
 }
 
+.modern-outline-overlay.overlay-right .outline-row {
+	justify-content: flex-end;
+}
+
+.modern-outline-overlay.overlay-left .outline-row {
+	justify-content: flex-start;
+}
+
 /* Each heading becomes a horizontal dash */
 .outline-dash {
-	height: 2px;
-	border-radius: 2px;
+	height: var(--dash-height);
+	border-radius: var(--dash-radius);
 	flex-shrink: 0;
 	background-color: var(--text-faint);
 	transition: background-color 0.2s ease, opacity 0.2s ease;
 	opacity: 0.55;
+}
+
+/* Entry animation: dashes cascade in (top to bottom) when the note opens.
+   `backwards` holds the from-state during the stagger delay (no flicker) and
+   reverts to normal CSS after, so the active dash keeps its accent. */
+.modern-outline-overlay.overlay-right.outline-animate-in .outline-dash {
+	animation: outline-dash-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.overlay-left.outline-animate-in .outline-dash {
+	animation: outline-dash-in-left 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+@keyframes outline-dash-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(12px);
+	}
+
+	to {
+		opacity: 0.55;
+		transform: translateX(0);
+	}
+}
+
+@keyframes outline-dash-in-left {
+	from {
+		opacity: 0;
+		transform: translateX(-12px);
+	}
+
+	to {
+		opacity: 0.55;
+		transform: translateX(0);
+	}
 }
 
 .outline-row:hover .outline-dash {
@@ -57,7 +152,7 @@
 	position: absolute;
 	top: 50%;
 	transform: translateY(-50%);
-	max-width: 240px;
+	width: var(--label-width);
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -66,51 +161,197 @@
 	color: var(--text-muted);
 	pointer-events: none;
 	opacity: 0;
-	transition: opacity 0.2s ease;
+	transition: opacity 0.22s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Label on the inner side of the dash (toward the note text) */
+/* Label sits on the inner side of the dash (toward the note text). At rest it
+   is nudged toward the dash; on reveal it slides out into place. */
 .modern-outline-overlay.overlay-right .outline-label {
 	right: calc(100% + 8px);
+	text-align: right;
+	transform: translate(10px, -50%);
 }
 
 .modern-outline-overlay.overlay-left .outline-label {
 	left: calc(100% + 8px);
+	text-align: left;
+	transform: translate(-10px, -50%);
 }
 
+/* Level hierarchy on the label: weight + contrast step down together.
+   Size stays fixed so rows remain aligned. */
+.outline-label--h1 {
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.outline-label--h2 {
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.outline-label--h3 {
+	font-weight: 400;
+	color: var(--text-muted);
+}
+
+.outline-label--h4 {
+	font-weight: 400;
+	color: var(--text-faint);
+}
+
+/* Hover the overlay → labels cascade in (top to bottom) with a slide + fade.
+   The stagger comes from --i (the heading index) set in JS; it applies only on
+   reveal, so labels disappear together when the cursor leaves. */
 .modern-outline-overlay:has(.outline-row:hover) .outline-label {
 	opacity: 1;
+	transform: translate(0, -50%);
+	transition-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Many headings: drop the stagger so the cascade isn't slow to finish. */
+.modern-outline-overlay.outline-no-stagger {
+	--stagger: 0ms;
+}
+
+/* Animations disabled: instant labels, no entry animation, no stagger. */
+.modern-outline-overlay.outline-no-anim .outline-dash {
+	animation: none;
+	transition: background-color 0.15s ease;
+}
+
+.modern-outline-overlay.outline-no-anim .outline-label {
+	transition: none;
+}
+
+.modern-outline-overlay.outline-no-anim:has(.outline-row:hover) .outline-label {
+	transition-delay: 0s;
 }
 
 .outline-row.is-active .outline-label {
 	color: var(--color-accent);
 }
 
+/* Mark the hovered label without changing its color — a subtle underline. */
 .outline-row:hover .outline-label {
-	color: var(--text-normal);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
 }
 
-/* Dash widths: H1 longest → H6 shortest */
+/* Dash widths: H1 longest → H6 shortest (driven by the level variables) */
 .outline-dash--h1 {
-	width: 16px;
+	width: var(--dash-h1-width);
 }
 
 .outline-dash--h2 {
-	width: 12px;
+	width: var(--dash-h2-width);
 }
 
 .outline-dash--h3 {
-	width: 8px;
+	width: var(--dash-h3-width);
 }
 
 .outline-dash--h4 {
-	width: 4px;
+	width: var(--dash-h4-width);
 }
 
 .outline-dash--h5 {
-	width: 8px;
+	width: var(--dash-h5-width);
 }
 
 .outline-dash--h6 {
-	width: 6px;
+	width: var(--dash-h6-width);
 }
+
+/* ===== Color themes ===== */
+/* Monochrome is the default styling above (no overrides). Dash and label colors
+   are independent. Selectors are prefixed with .modern-outline-overlay so they
+   outrank the default hover/active states. */
+
+/* --- Dash color --- */
+
+/* Accent: every dash tinted with the accent color; active stands out by opacity. */
+.modern-outline-overlay.outline-dash-accent .outline-dash {
+	background-color: var(--color-accent);
+	opacity: 0.4;
+}
+
+.modern-outline-overlay.outline-dash-accent .outline-row:hover .outline-dash {
+	opacity: 0.7;
+}
+
+.modern-outline-overlay.outline-dash-accent .outline-row.is-active .outline-dash {
+	opacity: 1;
+}
+
+/* Colorful: a distinct hue per heading level. Active stands out by full opacity. */
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h1 { background-color: var(--color-red); }
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h2 { background-color: var(--color-orange); }
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h3 { background-color: var(--color-green); }
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h4 { background-color: var(--color-blue); }
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h5 { background-color: var(--color-purple); }
+.modern-outline-overlay.outline-dash-colorful .outline-dash--h6 { background-color: var(--color-pink); }
+
+/* Theme headings: use the heading colors from the active Obsidian theme
+   (e.g. AnuPpuccin's --h1-color … --h6-color), falling back to the rainbow. */
+.modern-outline-overlay.outline-dash-headings .outline-dash--h1 { background-color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-dash-headings .outline-dash--h2 { background-color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-dash-headings .outline-dash--h3 { background-color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-dash-headings .outline-dash--h4 { background-color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-dash-headings .outline-dash--h5 { background-color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-dash-headings .outline-dash--h6 { background-color: var(--h6-color, var(--color-pink)); }
+
+/* --- Label color --- */
+
+/* Accent: all labels in the accent color (hierarchy still read via weight). */
+.modern-outline-overlay.outline-label-accent .outline-label {
+	color: var(--color-accent);
+}
+
+/* Colorful: a distinct hue per heading level. */
+.modern-outline-overlay.outline-label-colorful .outline-label--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-label-colorful .outline-label--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-label-colorful .outline-label--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-label-colorful .outline-label--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-label-colorful .outline-label--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-label-colorful .outline-label--h6 { color: var(--color-pink); }
+
+/* Theme headings. */
+.modern-outline-overlay.outline-label-headings .outline-label--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-label-headings .outline-label--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-label-headings .outline-label--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-label-headings .outline-label--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-label-headings .outline-label--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-label-headings .outline-label--h6 { color: var(--h6-color, var(--color-pink)); }
+
+/* ===== Dash shape ===== */
+.modern-outline-overlay.outline-shape-square .outline-dash { --dash-radius: 0; }
+.modern-outline-overlay.outline-shape-rounded .outline-dash { --dash-radius: 2px; }
+
+/* ===== Dash size — overrides the width + height variables ===== */
+.modern-outline-overlay.outline-size-small {
+	--dash-h1-width: 14px;
+	--dash-h2-width: 11px;
+	--dash-h3-width: 8px;
+	--dash-h4-width: 5px;
+	--dash-h5-width: 3px;
+	--dash-h6-width: 2px;
+	--dash-height: 2px;
+}
+
+.modern-outline-overlay.outline-size-large {
+	--dash-h1-width: 26px;
+	--dash-h2-width: 20px;
+	--dash-h3-width: 15px;
+	--dash-h4-width: 10px;
+	--dash-h5-width: 7px;
+	--dash-h6-width: 5px;
+	--dash-height: 3px;
+	--row-hover-width: 32px;
+}
+
+/* ===== Label font ===== */
+.modern-outline-overlay.outline-font-default .outline-label { font-family: var(--font-interface); }
+.modern-outline-overlay.outline-font-text .outline-label { font-family: var(--font-text); }
+.modern-outline-overlay.outline-font-mono .outline-label { font-family: var(--font-monospace); }
