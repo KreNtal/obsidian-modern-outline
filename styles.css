@@ -142,7 +142,6 @@
 }
 
 .outline-row.is-active .outline-dash {
-	background-color: var(--color-accent);
 	opacity: 1;
 }
 
@@ -229,7 +228,7 @@
 }
 
 .outline-row.is-active .outline-label {
-	color: var(--color-accent);
+	color: var(--text-normal);
 }
 
 /* Mark the hovered label without changing its color — a subtle underline. */
@@ -325,6 +324,59 @@
 .modern-outline-overlay.outline-label-headings .outline-label--h5 { color: var(--h5-color, var(--color-purple)); }
 .modern-outline-overlay.outline-label-headings .outline-label--h6 { color: var(--h6-color, var(--color-pink)); }
 
+/* ===== Highlight color (active heading) ===== */
+
+/* Accent: accent color on both dash and label. */
+.modern-outline-overlay.outline-highlight-accent .outline-row.is-active .outline-dash {
+	background-color: var(--color-accent);
+}
+.modern-outline-overlay.outline-highlight-accent .outline-row.is-active .outline-label {
+	color: var(--color-accent);
+}
+
+/* Monochrome: full-brightness text color — stands out without using the accent. */
+.modern-outline-overlay.outline-highlight-monochrome .outline-row.is-active .outline-dash {
+	background-color: var(--text-normal);
+}
+.modern-outline-overlay.outline-highlight-monochrome .outline-row.is-active .outline-label {
+	color: var(--text-normal);
+}
+
+/* Colorful: a distinct hue per heading level, same palette as the dash/label themes. */
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h1 { background-color: var(--color-red); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h2 { background-color: var(--color-orange); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h3 { background-color: var(--color-green); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h4 { background-color: var(--color-blue); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h5 { background-color: var(--color-purple); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-dash--h6 { background-color: var(--color-pink); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-highlight-colorful .outline-row.is-active .outline-label--h6 { color: var(--color-pink); }
+
+/* Theme headings: uses the heading colors from the active theme. */
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h1 { background-color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h2 { background-color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h3 { background-color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h4 { background-color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h5 { background-color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-dash--h6 { background-color: var(--h6-color, var(--color-pink)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-highlight-headings .outline-row.is-active .outline-label--h6 { color: var(--h6-color, var(--color-pink)); }
+
+/* Match dash: no color override on the dash — the active rung keeps whichever
+   color the dash theme gives it (accent, colorful level, headings level…)
+   at full opacity. The label brightens to text-normal so it reads as active. */
+.modern-outline-overlay.outline-highlight-match .outline-row.is-active .outline-label {
+	color: var(--text-normal);
+}
+
 /* ===== Dash shape ===== */
 .modern-outline-overlay.outline-shape-square .outline-dash { --dash-radius: 0; }
 .modern-outline-overlay.outline-shape-rounded .outline-dash { --dash-radius: 2px; }
@@ -351,7 +403,76 @@
 	--row-hover-width: 32px;
 }
 
+/* ===== Tree lines ===== */
+/* Absolutely positioned vertical lines that span from a parent heading's midpoint
+   to its last child's midpoint. Shown only while the overlay is hovered, fading
+   in together with the labels. Positioned by JS (buildTreeLines). */
+.outline-tree-line {
+	position: absolute;
+	width: 1px;
+	background-color: var(--text-faint);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.22s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Initial transform is set inline by JS (same ±10px nudge as labels).
+   !important overrides the inline style on hover so the transition fires. */
+.modern-outline-overlay:has(.outline-row:hover) .outline-tree-line {
+	opacity: 0.45;
+	transform: translateX(0) !important;
+	transition-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.outline-no-stagger .outline-tree-line {
+	transform: none !important;
+	transition: opacity 0.22s ease;
+}
+
+.modern-outline-overlay.outline-no-anim .outline-tree-line {
+	transition: none;
+}
+
 /* ===== Label font ===== */
 .modern-outline-overlay.outline-font-default .outline-label { font-family: var(--font-interface); }
 .modern-outline-overlay.outline-font-text .outline-label { font-family: var(--font-text); }
 .modern-outline-overlay.outline-font-mono .outline-label { font-family: var(--font-monospace); }
+
+/* ===== Label hierarchy ===== */
+
+/* Indent: deeper headings are offset toward the dash so the list reads like a tree. */
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent .outline-label--h2,
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent\+size .outline-label--h2 { padding-left: 8px; }
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent .outline-label--h3,
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent\+size .outline-label--h3 { padding-left: 16px; }
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent .outline-label--h4,
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent\+size .outline-label--h4 { padding-left: 24px; }
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent .outline-label--h5,
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent\+size .outline-label--h5 { padding-left: 32px; }
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent .outline-label--h6,
+.modern-outline-overlay.overlay-left.outline-hierarchy-indent\+size .outline-label--h6 { padding-left: 40px; }
+
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent .outline-label--h2,
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent\+size .outline-label--h2 { padding-right: 8px; }
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent .outline-label--h3,
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent\+size .outline-label--h3 { padding-right: 16px; }
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent .outline-label--h4,
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent\+size .outline-label--h4 { padding-right: 24px; }
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent .outline-label--h5,
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent\+size .outline-label--h5 { padding-right: 32px; }
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent .outline-label--h6,
+.modern-outline-overlay.overlay-right.outline-hierarchy-indent\+size .outline-label--h6 { padding-right: 40px; }
+
+/* Size: font-size steps down with each level. */
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h1,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h1 { font-size: 13px; }
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h2,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h2 { font-size: 12px; }
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h3,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h3 { font-size: 11px; }
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h4,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h4 { font-size: 10px; }
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h5,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h5 { font-size: 9px; }
+.modern-outline-overlay.outline-hierarchy-size .outline-label--h6,
+.modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h6 { font-size: 8px; }

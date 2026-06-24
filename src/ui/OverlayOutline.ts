@@ -1,6 +1,6 @@
 import { App, debounce, MarkdownView, TFile } from 'obsidian';
 import type ModernOutlinePlugin from '../main';
-import { getHeadings, HeadingInfo } from '../utils/headings';
+import { cleanHeadingText, getHeadings, HeadingInfo } from '../utils/headings';
 
 export class OverlayOutline {
 	private overlayEl: HTMLElement | null = null;
@@ -91,9 +91,11 @@ export class OverlayOutline {
 		overlay.classList.add(`overlay-${this.plugin.settings.verticalPosition}`);
 		overlay.classList.add(`outline-dash-${this.plugin.settings.dashColor}`);
 		overlay.classList.add(`outline-label-${this.plugin.settings.labelColor}`);
+		overlay.classList.add(`outline-highlight-${this.plugin.settings.highlightColor}`);
 		overlay.classList.add(`outline-shape-${this.plugin.settings.dashShape}`);
 		overlay.classList.add(`outline-size-${this.plugin.settings.dashSize}`);
 		overlay.classList.add(`outline-font-${this.plugin.settings.labelFont}`);
+		overlay.classList.add(`outline-hierarchy-${this.plugin.settings.labelHierarchy}`);
 
 		const animate = this.plugin.settings.animationsEnabled;
 		if (!animate) overlay.classList.add('outline-no-anim');
@@ -119,13 +121,77 @@ export class OverlayOutline {
 			const row = overlay.createDiv({ cls: 'outline-row' });
 			row.dataset.index = String(i);
 			row.style.setProperty('--i', String(i)); // cascade order, inherited by dash + label
-			row.createSpan({ cls: `outline-label outline-label--h${h.level}`, text: h.heading });
+			row.createSpan({ cls: `outline-label outline-label--h${h.level}`, text: cleanHeadingText(h.heading) });
 			row.createDiv({ cls: `outline-dash outline-dash--h${h.level}` });
 			row.addEventListener('click', () => this.scrollToHeading(h, view));
 		});
 
 		this.applyLayout(view);
+		this.buildTreeLines();
 		this.highlightCurrentHeading();
+	}
+
+	// Injects absolutely-positioned vertical line elements that connect each
+	// parent heading's midpoint to its last child's midpoint. Runs after
+	// applyLayout so offsetTop values reflect the final padding/sizes.
+	private buildTreeLines() {
+		const overlay = this.overlayEl;
+		if (!overlay || !this.plugin.settings.treeLines) return;
+
+		if (this.headings.length > 30) return;
+
+		const rows = Array.from(overlay.querySelectorAll<HTMLElement>('.outline-row'));
+		const isRight = this.plugin.settings.sidebarSide === 'right';
+		// Must match the CSS `calc(100% + 8px)` label offset and the indent step.
+		const labelGap = 8;
+		const indentStep = 8;
+
+		for (let i = 0; i < this.headings.length; i++) {
+			const parentHeading = this.headings[i];
+			if (!parentHeading) continue;
+			const parentLevel = parentHeading.level;
+
+			// Find the last heading that is a descendant of this one.
+			let lastChildIdx = -1;
+			for (let j = i + 1; j < this.headings.length; j++) {
+				const h = this.headings[j];
+				if (!h || h.level <= parentLevel) break;
+				lastChildIdx = j;
+			}
+			if (lastChildIdx < 0) continue;
+
+			const parentRow = rows[i];
+			const lastChildRow = rows[lastChildIdx];
+			if (!parentRow || !lastChildRow) continue;
+
+			// Height = distance from parent row center to last child row center.
+			// offsetTop values are relative to the overlay (shared offset parent).
+			const lineHeight =
+				(lastChildRow.offsetTop + lastChildRow.offsetHeight / 2) -
+				(parentRow.offsetTop + parentRow.offsetHeight / 2);
+			if (lineHeight <= 0) continue;
+
+			// Horizontal offset from the near edge of the row, into the label area.
+			const rowWidth = parentRow.offsetWidth;
+			const offsetFromEdge = rowWidth + labelGap + (parentLevel - 1) * indentStep + indentStep / 2;
+
+			// The line is a child of its parent row so it inherits --i and --stagger
+			// automatically — no manual copy needed, and it animates in sync with
+			// the row's label regardless of whether stagger is on or off.
+			const line = parentRow.createDiv({ cls: 'outline-tree-line' });
+			// top: 50% = vertical center of parent row (matches the lineTop formula above).
+			line.style.top = '112%';
+			line.style.height = `${lineHeight - 4}px`;
+			// Initial nudge mirrors the label rest position; CSS :has(:hover) overrides
+			// it with translateX(0) !important to trigger the transition.
+			line.style.transform = isRight ? 'translateX(10px)' : 'translateX(-10px)';
+
+			if (isRight) {
+				line.style.right = `${offsetFromEdge}px`;
+			} else {
+				line.style.left = `${offsetFromEdge}px`;
+			}
+		}
 	}
 
 	// Computes how many rungs fit in the available height (reserving headroom so

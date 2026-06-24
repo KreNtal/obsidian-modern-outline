@@ -5,15 +5,20 @@ export type ColorTheme = 'monochrome' | 'accent' | 'colorful' | 'headings';
 export type DashShape = 'rounded' | 'square';
 export type DashSize = 'small' | 'medium' | 'large';
 export type LabelFont = 'default' | 'text' | 'mono';
+export type HighlightColor = 'accent' | 'monochrome' | 'colorful' | 'headings' | 'match';
+export type LabelHierarchy = 'none' | 'indent' | 'size' | 'indent+size';
 
 export interface ModernOutlineSettings {
 	sidebarSide: 'left' | 'right';
 	verticalPosition: 'top' | 'center' | 'bottom';
 	dashColor: ColorTheme;
 	labelColor: ColorTheme;
+	highlightColor: HighlightColor;
 	dashShape: DashShape;
 	dashSize: DashSize;
 	labelFont: LabelFont;
+	labelHierarchy: LabelHierarchy;
+	treeLines: boolean;
 	animationsEnabled: boolean;
 	minHeadingLevel: number;
 	maxHeadingLevel: number;
@@ -24,9 +29,12 @@ export const DEFAULT_SETTINGS: ModernOutlineSettings = {
 	verticalPosition: 'center',
 	dashColor: 'monochrome',
 	labelColor: 'monochrome',
+	highlightColor: 'accent',
 	dashShape: 'rounded',
 	dashSize: 'medium',
 	labelFont: 'default',
+	labelHierarchy: 'none',
+	treeLines: false,
 	animationsEnabled: true,
 	minHeadingLevel: 1,
 	maxHeadingLevel: 4,
@@ -110,6 +118,24 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName('Dash highlight color')
+			.setDesc('Color used to mark the active heading dash and label')
+			.addDropdown(drop =>
+				drop
+					.addOption('accent', 'Accent')
+					.addOption('monochrome', 'Monochrome')
+					.addOption('colorful', 'Colorful')
+					.addOption('headings', 'Theme headings')
+					.addOption('match', 'Match dash')
+					.setValue(this.plugin.settings.highlightColor)
+					.onChange(async (value) => {
+						this.plugin.settings.highlightColor = value as HighlightColor;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName('Label color')
 			.setDesc('Color style for the labels')
 			.addDropdown(drop =>
@@ -168,6 +194,36 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.labelFont)
 					.onChange(async (value) => {
 						this.plugin.settings.labelFont = value as LabelFont;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Label hierarchy')
+			.setDesc('How heading depth is shown in the labels')
+			.addDropdown(drop =>
+				drop
+					.addOption('none', 'None')
+					.addOption('indent', 'Indent')
+					.addOption('size', 'Size')
+					.addOption('indent+size', 'Indent + Size')
+					.setValue(this.plugin.settings.labelHierarchy)
+					.onChange(async (value) => {
+						this.plugin.settings.labelHierarchy = value as LabelHierarchy;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Tree lines')
+			.setDesc('Show vertical lines connecting each heading to its children')
+			.addToggle(toggle =>
+				toggle
+					.setValue(this.plugin.settings.treeLines)
+					.onChange(async (value) => {
+						this.plugin.settings.treeLines = value;
 						await this.plugin.saveSettings();
 						this.plugin.refreshOutlineView();
 					})
