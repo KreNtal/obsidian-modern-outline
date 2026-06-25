@@ -6,7 +6,7 @@ export class OverlayOutline {
 	private overlayEl: HTMLElement | null = null;
 	private currentView: MarkdownView | null = null;
 	private headings: HeadingInfo[] = [];
-	private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+	private refreshTimer: number | null = null;
 	private _enabled = true;
 	private scrollHandler: ((event: Event) => void) | null = null;
 	private animateNextRefresh = false;
@@ -66,7 +66,7 @@ export class OverlayOutline {
 	}
 
 	detach() {
-		if (this.refreshTimer) clearTimeout(this.refreshTimer);
+		if (this.refreshTimer) window.clearTimeout(this.refreshTimer);
 		this.overlayEl?.remove();
 		this.overlayEl = null;
 		this.currentView = null;
@@ -74,8 +74,8 @@ export class OverlayOutline {
 	}
 
 	scheduleRefresh(delay = 300) {
-		if (this.refreshTimer) clearTimeout(this.refreshTimer);
-		this.refreshTimer = setTimeout(() => this.doRefresh(), delay);
+		if (this.refreshTimer) window.clearTimeout(this.refreshTimer);
+		this.refreshTimer = window.setTimeout(() => this.doRefresh(), delay);
 	}
 
 	private doRefresh() {
@@ -245,7 +245,7 @@ export class OverlayOutline {
 		// openFile sets the initial position, applyScroll ensures the line
 		// is visible once the view is ready.
 		void view.leaf.openFile(file, { active: true, eState: { line } });
-		setTimeout(() => {
+		window.setTimeout(() => {
 			view.currentMode.applyScroll(line);
 		}, 0);
 	}

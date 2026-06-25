@@ -47,9 +47,6 @@
 	scrollbar-width: none;
 }
 
-.modern-outline-overlay.overlay-scroll::-webkit-scrollbar {
-	display: none;
-}
 
 .modern-outline-overlay.overlay-top {
 	top: 60px;
@@ -287,12 +284,6 @@
 	color: var(--text-normal);
 }
 
-/* Mark the hovered label without changing its color — a subtle underline. */
-.outline-row:hover .outline-label {
-	text-decoration: underline;
-	text-decoration-thickness: 1px;
-	text-underline-offset: 2px;
-}
 
 /* Dash widths: H1 longest → H6 shortest (driven by the level variables) */
 .outline-dash--h1 {
