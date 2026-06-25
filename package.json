@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-modern-outline",
-	"version": "1.1.2",
+	"version": "1.1.3",
 	"description": "A modern minimap outline for Obsidian notes.",
 	"main": "main.js",
 	"type": "module",
