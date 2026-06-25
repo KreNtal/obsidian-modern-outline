@@ -1,4 +1,4 @@
-import { App, debounce, MarkdownView, TFile } from 'obsidian';
+import { App, debounce, MarkdownView, Platform, TFile } from 'obsidian';
 import type ModernOutlinePlugin from '../main';
 import { cleanHeadingText, getHeadings, HeadingInfo } from '../utils/headings';
 
@@ -89,13 +89,14 @@ export class OverlayOutline {
 			this.plugin.settings.sidebarSide === 'left' ? 'overlay-left' : 'overlay-right'
 		);
 		overlay.classList.add(`overlay-${this.plugin.settings.verticalPosition}`);
-		overlay.classList.add(`outline-dash-${this.plugin.settings.dashColor}`);
+		overlay.classList.add(`outline-dash-${this.plugin.settings.markerColor}`);
 		overlay.classList.add(`outline-label-${this.plugin.settings.labelColor}`);
 		overlay.classList.add(`outline-highlight-${this.plugin.settings.highlightColor}`);
-		overlay.classList.add(`outline-shape-${this.plugin.settings.dashShape}`);
-		overlay.classList.add(`outline-size-${this.plugin.settings.dashSize}`);
+		overlay.classList.add(`outline-shape-${this.plugin.settings.markerShape}`);
+		overlay.classList.add(`outline-size-${this.plugin.settings.markerSize}`);
 		overlay.classList.add(`outline-font-${this.plugin.settings.labelFont}`);
 		overlay.classList.add(`outline-hierarchy-${this.plugin.settings.labelHierarchy}`);
+		if (this.plugin.settings.labelsAlwaysOn) overlay.classList.add('outline-labels-always-on');
 
 		const animate = this.plugin.settings.animationsEnabled;
 		if (!animate) overlay.classList.add('outline-no-anim');
@@ -142,8 +143,7 @@ export class OverlayOutline {
 
 		const rows = Array.from(overlay.querySelectorAll<HTMLElement>('.outline-row'));
 		const isRight = this.plugin.settings.sidebarSide === 'right';
-		// Must match the CSS `calc(100% + 8px)` label offset and the indent step.
-		const labelGap = 8;
+		const labelGap = parseFloat(getComputedStyle(overlay).getPropertyValue('--label-gap')) || 4;
 		const indentStep = 8;
 
 		for (let i = 0; i < this.headings.length; i++) {
@@ -173,7 +173,7 @@ export class OverlayOutline {
 
 			// Horizontal offset from the near edge of the row, into the label area.
 			const rowWidth = parentRow.offsetWidth;
-			const offsetFromEdge = rowWidth + labelGap + (parentLevel - 1) * indentStep + indentStep / 2;
+			const offsetFromEdge = rowWidth + labelGap + (parentLevel - 1) * indentStep + indentStep / 2 - 4;
 
 			// The line is a child of its parent row so it inherits --i and --stagger
 			// automatically — no manual copy needed, and it animates in sync with
@@ -184,7 +184,9 @@ export class OverlayOutline {
 			line.style.height = `${lineHeight - 4}px`;
 			// Initial nudge mirrors the label rest position; CSS :has(:hover) overrides
 			// it with translateX(0) !important to trigger the transition.
-			line.style.transform = isRight ? 'translateX(10px)' : 'translateX(-10px)';
+			line.style.transform = isRight
+				? 'translateX(var(--label-nudge))'
+				: 'translateX(calc(-1 * var(--label-nudge)))';
 
 			if (isRight) {
 				line.style.right = `${offsetFromEdge}px`;
@@ -204,7 +206,7 @@ export class OverlayOutline {
 		if (!overlay) return;
 
 		const containerHeight = view.contentEl.clientHeight;
-		const cap = containerHeight * 0.85;
+		const cap = containerHeight * (Platform.isMobile ? 0.6 : 0.85);
 		const headroom = 10; // ≈ half a label height, top and bottom
 		const usable = Math.max(0, cap - headroom * 2);
 

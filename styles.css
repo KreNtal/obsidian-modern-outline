@@ -14,8 +14,16 @@
 	/* Horizontal hover area per row (wider than any dash for easy hovering). */
 	--row-hover-width: 25px;
 
-	/* Label box width — reused for the hovered-row dot placement. */
+	/* Label box width, gap from marker edge, and initial slide nudge. */
 	--label-width: 140px;
+	--label-gap: 4px;
+	--label-nudge: 10px;
+
+	/* Tree line visibility at rest. */
+	--tree-line-opacity: var(--tree-line-opacity);
+
+	/* Entry animation duration (shared by markers, labels, tree lines). */
+	--anim-in-duration: 0.35s;
 
 	/* Per-item delay for the cascade. Zeroed by .outline-no-stagger. */
 	--stagger: 16ms;
@@ -103,12 +111,12 @@
    `backwards` holds the from-state during the stagger delay (no flicker) and
    reverts to normal CSS after, so the active dash keeps its accent. */
 .modern-outline-overlay.overlay-right.outline-animate-in .outline-dash {
-	animation: outline-dash-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation: outline-dash-in-right var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
 	animation-delay: calc(var(--i, 0) * var(--stagger));
 }
 
 .modern-outline-overlay.overlay-left.outline-animate-in .outline-dash {
-	animation: outline-dash-in-left 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation: outline-dash-in-left var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
 	animation-delay: calc(var(--i, 0) * var(--stagger));
 }
 
@@ -132,6 +140,54 @@
 
 	to {
 		opacity: 0.55;
+		transform: translateX(0);
+	}
+}
+
+@keyframes outline-label-in-right {
+	from {
+		opacity: 0;
+		transform: translate(var(--label-nudge), -50%);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate(0, -50%);
+	}
+}
+
+@keyframes outline-label-in-left {
+	from {
+		opacity: 0;
+		transform: translate(calc(-1 * var(--label-nudge)), -50%);
+	}
+
+	to {
+		opacity: 1;
+		transform: translate(0, -50%);
+	}
+}
+
+@keyframes outline-tree-line-in-right {
+	from {
+		opacity: 0;
+		transform: translateX(var(--label-nudge));
+	}
+
+	to {
+		opacity: var(--tree-line-opacity);
+		transform: translateX(0);
+	}
+}
+
+@keyframes outline-tree-line-in-left {
+	from {
+		opacity: 0;
+		transform: translateX(calc(-1 * var(--label-nudge)));
+	}
+
+	to {
+		opacity: var(--tree-line-opacity);
 		transform: translateX(0);
 	}
 }
@@ -166,15 +222,15 @@
 /* Label sits on the inner side of the dash (toward the note text). At rest it
    is nudged toward the dash; on reveal it slides out into place. */
 .modern-outline-overlay.overlay-right .outline-label {
-	right: calc(100% + 8px);
+	right: calc(100% + var(--label-gap));
 	text-align: right;
-	transform: translate(10px, -50%);
+	transform: translate(var(--label-nudge), -50%);
 }
 
 .modern-outline-overlay.overlay-left .outline-label {
-	left: calc(100% + 8px);
+	left: calc(100% + var(--label-gap));
 	text-align: left;
-	transform: translate(-10px, -50%);
+	transform: translate(calc(-1 * var(--label-nudge)), -50%);
 }
 
 /* Level hierarchy on the label: weight + contrast step down together.
@@ -377,9 +433,247 @@
 	color: var(--text-normal);
 }
 
-/* ===== Dash shape ===== */
-.modern-outline-overlay.outline-shape-square .outline-dash { --dash-radius: 0; }
-.modern-outline-overlay.outline-shape-rounded .outline-dash { --dash-radius: 2px; }
+/* ===== Marker style ===== */
+
+/* Dash: thin sharp bar (0 radius makes it clearly different from pill) */
+.modern-outline-overlay.outline-shape-dash .outline-dash { --dash-radius: 0; }
+
+/* Pill: capsule — thicker than dash so the full rounding is visible */
+.modern-outline-overlay.outline-shape-pill .outline-dash {
+	--dash-radius: 999px;
+	height: 3px;
+}
+
+/* Circle: dot with full rounding, size steps down per level */
+.modern-outline-overlay.outline-shape-circle .outline-dash {
+	border-radius: 50%;
+	width: var(--circle-size, 8px);
+	height: var(--circle-size, 8px);
+}
+
+/* Circle sizes — medium (default) */
+.modern-outline-overlay.outline-shape-circle .outline-dash--h1 { --circle-size: 10px; }
+.modern-outline-overlay.outline-shape-circle .outline-dash--h2 { --circle-size: 8px; }
+.modern-outline-overlay.outline-shape-circle .outline-dash--h3 { --circle-size: 6px; }
+.modern-outline-overlay.outline-shape-circle .outline-dash--h4 { --circle-size: 5px; }
+.modern-outline-overlay.outline-shape-circle .outline-dash--h5 { --circle-size: 4px; }
+.modern-outline-overlay.outline-shape-circle .outline-dash--h6 { --circle-size: 3px; }
+
+/* Circle sizes — small */
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h1 { --circle-size: 7px; }
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h2 { --circle-size: 6px; }
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h3 { --circle-size: 5px; }
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h4 { --circle-size: 4px; }
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h5 { --circle-size: 3px; }
+.modern-outline-overlay.outline-size-small.outline-shape-circle .outline-dash--h6 { --circle-size: 2px; }
+
+/* Circle sizes — large */
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h1 { --circle-size: 13px; }
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h2 { --circle-size: 11px; }
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h3 { --circle-size: 9px; }
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h4 { --circle-size: 7px; }
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h5 { --circle-size: 5px; }
+.modern-outline-overlay.outline-size-large.outline-shape-circle .outline-dash--h6 { --circle-size: 4px; }
+
+/* Diamond: square rotated 45°. Uses CSS `rotate` (independent of `transform`)
+   so the entry animation's translateX still works without conflicts. */
+.modern-outline-overlay.outline-shape-diamond .outline-dash {
+	rotate: 45deg;
+	width: var(--diamond-size, 7px);
+	height: var(--diamond-size, 7px);
+	border-radius: 1px;
+}
+
+/* Diamond sizes — medium (default) */
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h1 { --diamond-size: 9px; }
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h2 { --diamond-size: 7px; }
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h3 { --diamond-size: 6px; }
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h4 { --diamond-size: 5px; }
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h5 { --diamond-size: 4px; }
+.modern-outline-overlay.outline-shape-diamond .outline-dash--h6 { --diamond-size: 3px; }
+
+/* Diamond sizes — small */
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h1 { --diamond-size: 6px; }
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h2 { --diamond-size: 5px; }
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h3 { --diamond-size: 4px; }
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h4 { --diamond-size: 3px; }
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h5 { --diamond-size: 3px; }
+.modern-outline-overlay.outline-size-small.outline-shape-diamond .outline-dash--h6 { --diamond-size: 2px; }
+
+/* Diamond sizes — large */
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h1 { --diamond-size: 11px; }
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h2 { --diamond-size: 9px; }
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h3 { --diamond-size: 8px; }
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h4 { --diamond-size: 7px; }
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h5 { --diamond-size: 6px; }
+.modern-outline-overlay.outline-size-large.outline-shape-diamond .outline-dash--h6 { --diamond-size: 4px; }
+
+/* Literal: text-based markers showing 'H1', 'H2', etc. */
+.modern-outline-overlay.outline-shape-literal .outline-dash {
+	background: none !important;
+	width: auto;
+	height: auto;
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-weight: 700;
+	line-height: 1;
+	transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.modern-outline-overlay.outline-shape-literal .outline-dash--h1::before { content: 'H1'; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h2::before { content: 'H2'; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h3::before { content: 'H3'; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h4::before { content: 'H4'; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h5::before { content: 'H5'; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h6::before { content: 'H6'; }
+
+/* Literal font size per level — medium (default) */
+.modern-outline-overlay.outline-shape-literal .outline-dash--h1 { font-size: 13px; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h2 { font-size: 11px; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h3 { font-size: 10px; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h4 { font-size: 9px; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h5 { font-size: 8px; }
+.modern-outline-overlay.outline-shape-literal .outline-dash--h6 { font-size: 7px; }
+
+/* Literal font size — small */
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h1 { font-size: 11px; }
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h2 { font-size: 9px; }
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h3 { font-size: 8px; }
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h4 { font-size: 7px; }
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h5 { font-size: 6px; }
+.modern-outline-overlay.outline-size-small.outline-shape-literal .outline-dash--h6 { font-size: 5px; }
+
+/* Literal font size — large */
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h1 { font-size: 15px; }
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h2 { font-size: 13px; }
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h3 { font-size: 12px; }
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h4 { font-size: 11px; }
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h5 { font-size: 10px; }
+.modern-outline-overlay.outline-size-large.outline-shape-literal .outline-dash--h6 { font-size: 9px; }
+
+/* Literal hover / active base (monochrome) */
+.modern-outline-overlay.outline-shape-literal .outline-row:hover .outline-dash { color: var(--text-muted); }
+.modern-outline-overlay.outline-shape-literal .outline-row.is-active .outline-dash { color: var(--text-normal); }
+
+/* Literal marker color themes */
+.modern-outline-overlay.outline-dash-accent.outline-shape-literal .outline-dash { color: var(--color-accent); }
+
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-literal .outline-dash--h6 { color: var(--color-pink); }
+
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-literal .outline-dash--h6 { color: var(--h6-color, var(--color-pink)); }
+
+/* Literal highlight color themes */
+.modern-outline-overlay.outline-highlight-accent.outline-shape-literal .outline-row.is-active .outline-dash { color: var(--color-accent); }
+.modern-outline-overlay.outline-highlight-monochrome.outline-shape-literal .outline-row.is-active .outline-dash { color: var(--text-normal); }
+
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-literal .outline-row.is-active .outline-dash--h6 { color: var(--color-pink); }
+
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-literal .outline-row.is-active .outline-dash--h6 { color: var(--h6-color, var(--color-pink)); }
+
+/* Hash: text-based markers — '#' per H1, '##' per H2, etc.
+   Background is suppressed; color drives tint instead of background-color.
+   Font-size steps down per level to reinforce hierarchy. */
+.modern-outline-overlay.outline-shape-hash .outline-dash {
+	background: none !important;
+	width: auto;
+	height: auto;
+	color: var(--text-faint);
+	font-family: var(--font-monospace);
+	font-weight: 700;
+	line-height: 1;
+	letter-spacing: -0.5px;
+	transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.modern-outline-overlay.outline-shape-hash .outline-dash--h1::before { content: '#'; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h2::before { content: '##'; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h3::before { content: '###'; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h4::before { content: '####'; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h5::before { content: '#####'; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h6::before { content: '######'; }
+
+/* Hash font size per level — medium (default) */
+.modern-outline-overlay.outline-shape-hash .outline-dash--h1 { font-size: 13px; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h2 { font-size: 11px; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h3 { font-size: 10px; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h4 { font-size: 9px; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h5 { font-size: 8px; }
+.modern-outline-overlay.outline-shape-hash .outline-dash--h6 { font-size: 7px; }
+
+/* Hash font size — small */
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h1 { font-size: 11px; }
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h2 { font-size: 9px; }
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h3 { font-size: 8px; }
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h4 { font-size: 7px; }
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h5 { font-size: 6px; }
+.modern-outline-overlay.outline-size-small.outline-shape-hash .outline-dash--h6 { font-size: 5px; }
+
+/* Hash font size — large */
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h1 { font-size: 15px; }
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h2 { font-size: 13px; }
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h3 { font-size: 12px; }
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h4 { font-size: 11px; }
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h5 { font-size: 10px; }
+.modern-outline-overlay.outline-size-large.outline-shape-hash .outline-dash--h6 { font-size: 9px; }
+
+/* Hash hover / active base (monochrome) */
+.modern-outline-overlay.outline-shape-hash .outline-row:hover .outline-dash { color: var(--text-muted); }
+.modern-outline-overlay.outline-shape-hash .outline-row.is-active .outline-dash { color: var(--text-normal); }
+
+/* Hash marker color themes — override background-color rules with color */
+.modern-outline-overlay.outline-dash-accent.outline-shape-hash .outline-dash { color: var(--color-accent); }
+
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-dash-colorful.outline-shape-hash .outline-dash--h6 { color: var(--color-pink); }
+
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-dash-headings.outline-shape-hash .outline-dash--h6 { color: var(--h6-color, var(--color-pink)); }
+
+/* Hash highlight color themes */
+.modern-outline-overlay.outline-highlight-accent.outline-shape-hash .outline-row.is-active .outline-dash { color: var(--color-accent); }
+.modern-outline-overlay.outline-highlight-monochrome.outline-shape-hash .outline-row.is-active .outline-dash { color: var(--text-normal); }
+
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h1 { color: var(--color-red); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h2 { color: var(--color-orange); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h3 { color: var(--color-green); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h4 { color: var(--color-blue); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h5 { color: var(--color-purple); }
+.modern-outline-overlay.outline-highlight-colorful.outline-shape-hash .outline-row.is-active .outline-dash--h6 { color: var(--color-pink); }
+
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h1 { color: var(--h1-color, var(--color-red)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h2 { color: var(--h2-color, var(--color-orange)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h3 { color: var(--h3-color, var(--color-green)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h4 { color: var(--h4-color, var(--color-blue)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h5 { color: var(--h5-color, var(--color-purple)); }
+.modern-outline-overlay.outline-highlight-headings.outline-shape-hash .outline-row.is-active .outline-dash--h6 { color: var(--h6-color, var(--color-pink)); }
 
 /* ===== Dash size — overrides the width + height variables ===== */
 .modern-outline-overlay.outline-size-small {
@@ -419,7 +713,7 @@
 /* Initial transform is set inline by JS (same ±10px nudge as labels).
    !important overrides the inline style on hover so the transition fires. */
 .modern-outline-overlay:has(.outline-row:hover) .outline-tree-line {
-	opacity: 0.45;
+	opacity: var(--tree-line-opacity);
 	transform: translateX(0) !important;
 	transition-delay: calc(var(--i, 0) * var(--stagger));
 }
@@ -476,3 +770,57 @@
 .modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h5 { font-size: 9px; }
 .modern-outline-overlay.outline-hierarchy-size .outline-label--h6,
 .modern-outline-overlay.outline-hierarchy-indent\+size .outline-label--h6 { font-size: 8px; }
+
+/* ===== Labels always on ===== */
+/* Bypass the :has(:hover) gate — labels and tree lines stay visible at all times. */
+.modern-outline-overlay.outline-labels-always-on .outline-label {
+	opacity: 1;
+	transform: translate(0, -50%);
+	pointer-events: auto;
+}
+
+/* Extend the row's hover/click area to cover the gap + label so there's no
+   dead zone between the dash and the label text. */
+.modern-outline-overlay.overlay-left.outline-labels-always-on .outline-row::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 100%;
+	width: calc(var(--label-gap) + var(--label-width));
+}
+
+.modern-outline-overlay.overlay-right.outline-labels-always-on .outline-row::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 100%;
+	width: calc(var(--label-gap) + var(--label-width));
+}
+
+.modern-outline-overlay.outline-labels-always-on .outline-tree-line {
+	opacity: var(--tree-line-opacity);
+	transform: translateX(0) !important;
+}
+
+/* Entry animation for labels — mirrors the dash animation, same stagger. */
+.modern-outline-overlay.overlay-right.outline-animate-in.outline-labels-always-on .outline-label {
+	animation: outline-label-in-right var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.overlay-left.outline-animate-in.outline-labels-always-on .outline-label {
+	animation: outline-label-in-left var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.overlay-right.outline-animate-in.outline-labels-always-on .outline-tree-line {
+	animation: outline-tree-line-in-right var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.overlay-left.outline-animate-in.outline-labels-always-on .outline-tree-line {
+	animation: outline-tree-line-in-left var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}

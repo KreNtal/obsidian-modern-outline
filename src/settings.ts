@@ -2,7 +2,7 @@ import { App, PluginSettingTab, Setting } from 'obsidian';
 import type ModernOutlinePlugin from './main';
 
 export type ColorTheme = 'monochrome' | 'accent' | 'colorful' | 'headings';
-export type DashShape = 'rounded' | 'square';
+export type DashShape = 'dash' | 'pill' | 'circle' | 'diamond' | 'literal' | 'hash';
 export type DashSize = 'small' | 'medium' | 'large';
 export type LabelFont = 'default' | 'text' | 'mono';
 export type HighlightColor = 'accent' | 'monochrome' | 'colorful' | 'headings' | 'match';
@@ -11,13 +11,14 @@ export type LabelHierarchy = 'none' | 'indent' | 'size' | 'indent+size';
 export interface ModernOutlineSettings {
 	sidebarSide: 'left' | 'right';
 	verticalPosition: 'top' | 'center' | 'bottom';
-	dashColor: ColorTheme;
+	markerColor: ColorTheme;
 	labelColor: ColorTheme;
 	highlightColor: HighlightColor;
-	dashShape: DashShape;
-	dashSize: DashSize;
+	markerShape: DashShape;
+	markerSize: DashSize;
 	labelFont: LabelFont;
 	labelHierarchy: LabelHierarchy;
+	labelsAlwaysOn: boolean;
 	treeLines: boolean;
 	animationsEnabled: boolean;
 	minHeadingLevel: number;
@@ -27,13 +28,14 @@ export interface ModernOutlineSettings {
 export const DEFAULT_SETTINGS: ModernOutlineSettings = {
 	sidebarSide: 'left',
 	verticalPosition: 'center',
-	dashColor: 'monochrome',
+	markerColor: 'monochrome',
 	labelColor: 'monochrome',
-	highlightColor: 'accent',
-	dashShape: 'rounded',
-	dashSize: 'medium',
+	highlightColor: 'monochrome',
+	markerShape: 'dash',
+	markerSize: 'medium',
 	labelFont: 'default',
 	labelHierarchy: 'none',
+	labelsAlwaysOn: false,
 	treeLines: false,
 	animationsEnabled: true,
 	minHeadingLevel: 1,
@@ -52,7 +54,8 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl('h3', { text: 'Appearance' });
+		// ── Layout ──────────────────────────────────────────────────────────
+		containerEl.createEl('h3', { text: 'Layout' });
 
 		new Setting(containerEl)
 			.setName('Horizontal position')
@@ -87,7 +90,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Animations')
-			.setDesc('Enable the cascade and fade animations of dashes and labels')
+			.setDesc('Enable cascade and fade animations for markers and labels')
 			.addToggle(toggle =>
 				toggle
 					.setValue(this.plugin.settings.animationsEnabled)
@@ -98,35 +101,71 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					})
 			);
 
-		containerEl.createEl('h3', { text: 'Style' });
+		// ── Markers ─────────────────────────────────────────────────────────
+		containerEl.createEl('h3', { text: 'Markers' });
 
 		new Setting(containerEl)
-			.setName('Dash color')
-			.setDesc('Color style for the dashes')
+			.setName('Style')
+			.setDesc('Shape of the markers')
 			.addDropdown(drop =>
 				drop
-					.addOption('monochrome', 'Monochrome')
-					.addOption('accent', 'Accent')
-					.addOption('colorful', 'Colorful')
-					.addOption('headings', 'Theme headings')
-					.setValue(this.plugin.settings.dashColor)
+					.addOption('dash', 'Dash')
+					.addOption('pill', 'Pill')
+					.addOption('circle', 'Circle')
+					.addOption('diamond', 'Diamond')
+					.addOption('literal', 'Literal')
+					.addOption('hash', 'Hash')
+					.setValue(this.plugin.settings.markerShape)
 					.onChange(async (value) => {
-						this.plugin.settings.dashColor = value as ColorTheme;
+						this.plugin.settings.markerShape = value as DashShape;
 						await this.plugin.saveSettings();
 						this.plugin.refreshOutlineView();
 					})
 			);
 
 		new Setting(containerEl)
-			.setName('Dash highlight color')
-			.setDesc('Color used to mark the active heading dash and label')
+			.setName('Size')
+			.setDesc('Overall size of the markers')
 			.addDropdown(drop =>
 				drop
-					.addOption('accent', 'Accent')
+					.addOption('small', 'Small')
+					.addOption('medium', 'Medium')
+					.addOption('large', 'Large')
+					.setValue(this.plugin.settings.markerSize)
+					.onChange(async (value) => {
+						this.plugin.settings.markerSize = value as DashSize;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Color')
+			.setDesc('Color style for the markers')
+			.addDropdown(drop =>
+				drop
 					.addOption('monochrome', 'Monochrome')
+					.addOption('accent', 'Accent')
 					.addOption('colorful', 'Colorful')
 					.addOption('headings', 'Theme headings')
-					.addOption('match', 'Match dash')
+					.setValue(this.plugin.settings.markerColor)
+					.onChange(async (value) => {
+						this.plugin.settings.markerColor = value as ColorTheme;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Highlight color')
+			.setDesc('Color used to highlight the active heading marker and label')
+			.addDropdown(drop =>
+				drop
+					.addOption('monochrome', 'Monochrome')
+					.addOption('accent', 'Accent')
+					.addOption('colorful', 'Colorful')
+					.addOption('headings', 'Theme headings')
+					.addOption('match', 'Match marker')
 					.setValue(this.plugin.settings.highlightColor)
 					.onChange(async (value) => {
 						this.plugin.settings.highlightColor = value as HighlightColor;
@@ -135,8 +174,11 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// ── Labels ──────────────────────────────────────────────────────────
+		containerEl.createEl('h3', { text: 'Labels' });
+
 		new Setting(containerEl)
-			.setName('Label color')
+			.setName('Color')
 			.setDesc('Color style for the labels')
 			.addDropdown(drop =>
 				drop
@@ -153,38 +195,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Dash shape')
-			.setDesc('Corner style of the dashes')
-			.addDropdown(drop =>
-				drop
-					.addOption('rounded', 'Rounded')
-					.addOption('square', 'Square')
-					.setValue(this.plugin.settings.dashShape)
-					.onChange(async (value) => {
-						this.plugin.settings.dashShape = value as DashShape;
-						await this.plugin.saveSettings();
-						this.plugin.refreshOutlineView();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName('Dash size')
-			.setDesc('Overall size of the dashes')
-			.addDropdown(drop =>
-				drop
-					.addOption('small', 'Small')
-					.addOption('medium', 'Medium')
-					.addOption('large', 'Large')
-					.setValue(this.plugin.settings.dashSize)
-					.onChange(async (value) => {
-						this.plugin.settings.dashSize = value as DashSize;
-						await this.plugin.saveSettings();
-						this.plugin.refreshOutlineView();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName('Label font')
+			.setName('Font')
 			.setDesc('Font used for the heading labels')
 			.addDropdown(drop =>
 				drop
@@ -200,7 +211,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Label hierarchy')
+			.setName('Hierarchy')
 			.setDesc('How heading depth is shown in the labels')
 			.addDropdown(drop =>
 				drop
@@ -217,8 +228,21 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName('Always visible')
+			.setDesc('Keep labels visible at all times instead of only on hover')
+			.addToggle(toggle =>
+				toggle
+					.setValue(this.plugin.settings.labelsAlwaysOn)
+					.onChange(async (value) => {
+						this.plugin.settings.labelsAlwaysOn = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName('Tree lines')
-			.setDesc('Show vertical lines connecting each heading to its children')
+			.setDesc('Show vertical lines hierarchy connecting each label to its children')
 			.addToggle(toggle =>
 				toggle
 					.setValue(this.plugin.settings.treeLines)
@@ -229,10 +253,11 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// ── Headings ─────────────────────────────────────────────────────────
 		containerEl.createEl('h3', { text: 'Headings' });
 
 		new Setting(containerEl)
-			.setName('Minimum heading level')
+			.setName('Minimum level')
 			.setDesc('Headings above this level are hidden (1 = H1, 2 = H2 …)')
 			.addSlider(slider =>
 				slider
@@ -247,7 +272,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Maximum heading level')
+			.setName('Maximum level')
 			.setDesc('Headings below this level are hidden (6 = show all)')
 			.addSlider(slider =>
 				slider
