@@ -19,9 +19,6 @@
 	--label-gap: 4px;
 	--label-nudge: 10px;
 
-	/* Tree line visibility at rest. */
-	--tree-line-opacity: var(--tree-line-opacity);
-
 	/* Entry animation duration (shared by markers, labels, tree lines). */
 	--anim-in-duration: 0.35s;
 
@@ -172,7 +169,7 @@
 	}
 
 	to {
-		opacity: var(--tree-line-opacity);
+		opacity: 0.45;
 		transform: translateX(0);
 	}
 }
@@ -184,7 +181,7 @@
 	}
 
 	to {
-		opacity: var(--tree-line-opacity);
+		opacity: 0.45;
 		transform: translateX(0);
 	}
 }
@@ -284,6 +281,11 @@
 	color: var(--text-normal);
 }
 
+.outline-row:hover .outline-label {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 2px;
+}
 
 /* Dash widths: H1 longest → H6 shortest (driven by the level variables) */
 .outline-dash--h1 {
@@ -501,7 +503,7 @@
 
 /* Literal: text-based markers showing 'H1', 'H2', etc. */
 .modern-outline-overlay.outline-shape-literal .outline-dash {
-	background-color: transparent;
+	background: none !important;
 	width: auto;
 	height: auto;
 	color: var(--text-faint);
@@ -585,7 +587,7 @@
    Background is suppressed; color drives tint instead of background-color.
    Font-size steps down per level to reinforce hierarchy. */
 .modern-outline-overlay.outline-shape-hash .outline-dash {
-	background-color: transparent;
+	background: none !important;
 	width: auto;
 	height: auto;
 	color: var(--text-faint);
@@ -704,7 +706,7 @@
 /* Initial transform is set inline by JS (same ±10px nudge as labels).
    !important overrides the inline style on hover so the transition fires. */
 .modern-outline-overlay:has(.outline-row:hover) .outline-tree-line {
-	opacity: var(--tree-line-opacity);
+	opacity: 0.45;
 	transform: translateX(0) !important;
 	transition-delay: calc(var(--i, 0) * var(--stagger));
 }
@@ -791,7 +793,7 @@
 }
 
 .modern-outline-overlay.outline-labels-always-on .outline-tree-line {
-	opacity: var(--tree-line-opacity);
+	opacity: 0.45;
 	transform: translateX(0) !important;
 }
 

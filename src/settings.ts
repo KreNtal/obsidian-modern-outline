@@ -178,6 +178,19 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 		new Setting(containerEl).setName('Labels').setHeading();
 
 		new Setting(containerEl)
+			.setName('Always visible')
+			.setDesc('Keep labels visible at all times instead of only on hover')
+			.addToggle(toggle =>
+				toggle
+					.setValue(this.plugin.settings.labelsAlwaysOn)
+					.onChange(async (value) => {
+						this.plugin.settings.labelsAlwaysOn = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName('Color')
 			.setDesc('Color style for the labels')
 			.addDropdown(drop =>
@@ -222,19 +235,6 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.labelHierarchy)
 					.onChange(async (value) => {
 						this.plugin.settings.labelHierarchy = value as LabelHierarchy;
-						await this.plugin.saveSettings();
-						this.plugin.refreshOutlineView();
-					})
-			);
-
-		new Setting(containerEl)
-			.setName('Always visible')
-			.setDesc('Keep labels visible at all times instead of only on hover')
-			.addToggle(toggle =>
-				toggle
-					.setValue(this.plugin.settings.labelsAlwaysOn)
-					.onChange(async (value) => {
-						this.plugin.settings.labelsAlwaysOn = value;
 						await this.plugin.saveSettings();
 						this.plugin.refreshOutlineView();
 					})
