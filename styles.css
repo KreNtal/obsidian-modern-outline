@@ -501,7 +501,7 @@
 
 /* Literal: text-based markers showing 'H1', 'H2', etc. */
 .modern-outline-overlay.outline-shape-literal .outline-dash {
-	background: none !important;
+	background-color: transparent;
 	width: auto;
 	height: auto;
 	color: var(--text-faint);
@@ -585,7 +585,7 @@
    Background is suppressed; color drives tint instead of background-color.
    Font-size steps down per level to reinforce hierarchy. */
 .modern-outline-overlay.outline-shape-hash .outline-dash {
-	background: none !important;
+	background-color: transparent;
 	width: auto;
 	height: auto;
 	color: var(--text-faint);
