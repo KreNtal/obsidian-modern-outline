@@ -8,6 +8,7 @@ export default tseslint.config(
 		languageOptions: {
 			globals: {
 				...globals.browser,
+				activeWindow: 'readonly',
 			},
 			parserOptions: {
 				projectService: {
@@ -25,6 +26,7 @@ export default tseslint.config(
 	globalIgnores([
 		"node_modules",
 		"dist",
+		"build/**",
 		"esbuild.config.mjs",
 		"eslint.config.js",
 		"version-bump.mjs",

@@ -55,7 +55,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// ── Layout ──────────────────────────────────────────────────────────
-		containerEl.createEl('h3', { text: 'Layout' });
+		new Setting(containerEl).setName('Layout').setHeading();
 
 		new Setting(containerEl)
 			.setName('Horizontal position')
@@ -102,7 +102,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		// ── Markers ─────────────────────────────────────────────────────────
-		containerEl.createEl('h3', { text: 'Markers' });
+		new Setting(containerEl).setName('Markers').setHeading();
 
 		new Setting(containerEl)
 			.setName('Style')
@@ -175,7 +175,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		// ── Labels ──────────────────────────────────────────────────────────
-		containerEl.createEl('h3', { text: 'Labels' });
+		new Setting(containerEl).setName('Labels').setHeading();
 
 		new Setting(containerEl)
 			.setName('Color')
@@ -218,7 +218,7 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					.addOption('none', 'None')
 					.addOption('indent', 'Indent')
 					.addOption('size', 'Size')
-					.addOption('indent+size', 'Indent + Size')
+					.addOption('indent+size', 'Indent + size')
 					.setValue(this.plugin.settings.labelHierarchy)
 					.onChange(async (value) => {
 						this.plugin.settings.labelHierarchy = value as LabelHierarchy;
@@ -254,16 +254,15 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 			);
 
 		// ── Headings ─────────────────────────────────────────────────────────
-		containerEl.createEl('h3', { text: 'Headings' });
+		new Setting(containerEl).setName('Headings').setHeading();
 
 		new Setting(containerEl)
 			.setName('Minimum level')
-			.setDesc('Headings above this level are hidden (1 = H1, 2 = H2 …)')
+			.setDesc('Show headings from this level and below')
 			.addSlider(slider =>
 				slider
 					.setLimits(1, 6, 1)
 					.setValue(this.plugin.settings.minHeadingLevel)
-					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.minHeadingLevel = value;
 						await this.plugin.saveSettings();
@@ -273,12 +272,11 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName('Maximum level')
-			.setDesc('Headings below this level are hidden (6 = show all)')
+			.setDesc('Show headings up to this level (6 = show all)')
 			.addSlider(slider =>
 				slider
 					.setLimits(1, 6, 1)
 					.setValue(this.plugin.settings.maxHeadingLevel)
-					.setDynamicTooltip()
 					.onChange(async (value) => {
 						this.plugin.settings.maxHeadingLevel = value;
 						await this.plugin.saveSettings();

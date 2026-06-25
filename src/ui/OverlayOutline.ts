@@ -179,20 +179,11 @@ export class OverlayOutline {
 			// automatically — no manual copy needed, and it animates in sync with
 			// the row's label regardless of whether stagger is on or off.
 			const line = parentRow.createDiv({ cls: 'outline-tree-line' });
-			// top: 50% = vertical center of parent row (matches the lineTop formula above).
-			line.style.top = '112%';
-			line.style.height = `${lineHeight - 4}px`;
-			// Initial nudge mirrors the label rest position; CSS :has(:hover) overrides
-			// it with translateX(0) !important to trigger the transition.
-			line.style.transform = isRight
+			const transform = isRight
 				? 'translateX(var(--label-nudge))'
 				: 'translateX(calc(-1 * var(--label-nudge)))';
-
-			if (isRight) {
-				line.style.right = `${offsetFromEdge}px`;
-			} else {
-				line.style.left = `${offsetFromEdge}px`;
-			}
+			const side = isRight ? `right: ${offsetFromEdge}px` : `left: ${offsetFromEdge}px`;
+			line.setAttribute('style', `top: 112%; height: ${lineHeight - 4}px; transform: ${transform}; ${side}`);
 		}
 	}
 
@@ -232,18 +223,18 @@ export class OverlayOutline {
 	private getNoteScroller(view: MarkdownView): HTMLElement | null {
 		if (view.getMode() === 'preview') {
 			const el = view.contentEl;
-			return (el.querySelector('.markdown-preview-view') as HTMLElement | null)
-				?? (el.querySelector('.markdown-reading-view') as HTMLElement | null);
+			return el.querySelector<HTMLElement>('.markdown-preview-view')
+				?? el.querySelector<HTMLElement>('.markdown-reading-view');
 		}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const cm = (view.editor as any)?.cm;
-		return (cm?.scrollDOM as HTMLElement | undefined)
-			?? (view.contentEl.querySelector('.cm-scroller') as HTMLElement | null);
+		const editor = view.editor as unknown as { cm?: { scrollDOM?: HTMLElement } } | undefined;
+		return editor?.cm?.scrollDOM
+			?? view.contentEl.querySelector<HTMLElement>('.cm-scroller');
 	}
 
 	private scrollToHeading(h: HeadingInfo, view: MarkdownView) {
 		const line = h.position.start.line;
-		const file = view.file as TFile;
+		if (!(view.file instanceof TFile)) return;
+		const file = view.file;
 
 		// Activate the leaf first, so a click works even when focus was
 		// elsewhere (sidebar, another pane) — otherwise the first click only
@@ -253,7 +244,7 @@ export class OverlayOutline {
 		// Mirrors obsidian-dynamic-outline's _navigateToHeading:
 		// openFile sets the initial position, applyScroll ensures the line
 		// is visible once the view is ready.
-		view.leaf.openFile(file, { active: true, eState: { line } });
+		void view.leaf.openFile(file, { active: true, eState: { line } });
 		setTimeout(() => {
 			view.currentMode.applyScroll(line);
 		}, 0);
