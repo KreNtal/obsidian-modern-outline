@@ -697,11 +697,13 @@
 .outline-tree-line {
 	position: absolute;
 	width: 1px;
-	background-color: var(--text-faint);
 	opacity: 0;
 	pointer-events: none;
 	transition: opacity 0.22s ease, transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
+
+.outline-tree-lines-monochrome .outline-tree-line { background-color: var(--text-faint); }
+.outline-tree-lines-accent .outline-tree-line { background-color: var(--color-accent); }
 
 /* Initial transform is set inline by JS (same ±10px nudge as labels).
    !important overrides the inline style on hover so the transition fires. */

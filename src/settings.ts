@@ -7,6 +7,7 @@ export type DashSize = 'small' | 'medium' | 'large';
 export type LabelFont = 'default' | 'text' | 'mono';
 export type HighlightColor = 'accent' | 'monochrome' | 'colorful' | 'headings' | 'match';
 export type LabelHierarchy = 'none' | 'indent' | 'size' | 'indent+size';
+export type TreeLineColor = 'monochrome' | 'accent' | 'match';
 
 export interface ModernOutlineSettings {
 	sidebarSide: 'left' | 'right';
@@ -20,6 +21,7 @@ export interface ModernOutlineSettings {
 	labelHierarchy: LabelHierarchy;
 	labelsAlwaysOn: boolean;
 	treeLines: boolean;
+	treeLineColor: TreeLineColor;
 	animationsEnabled: boolean;
 	minHeadingLevel: number;
 	maxHeadingLevel: number;
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: ModernOutlineSettings = {
 	labelHierarchy: 'none',
 	labelsAlwaysOn: false,
 	treeLines: false,
+	treeLineColor: 'monochrome',
 	animationsEnabled: true,
 	minHeadingLevel: 1,
 	maxHeadingLevel: 4,
@@ -240,14 +243,33 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 					})
 			);
 
+		// ── Tree lines ──────────────────────────────────────────────────────────
+		new Setting(containerEl).setName('Tree lines').setHeading();
+
 		new Setting(containerEl)
-			.setName('Tree lines')
-			.setDesc('Show vertical lines hierarchy connecting each label to its children')
+			.setName('Enabled')
+			.setDesc('Show vertical lines connecting each heading to its children')
 			.addToggle(toggle =>
 				toggle
 					.setValue(this.plugin.settings.treeLines)
 					.onChange(async (value) => {
 						this.plugin.settings.treeLines = value;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName('Color')
+			.setDesc('Color of the vertical hierarchy lines')
+			.addDropdown(drop =>
+				drop
+					.addOption('monochrome', 'Monochrome')
+					.addOption('accent', 'Accent')
+					.addOption('match', 'Match heading')
+					.setValue(this.plugin.settings.treeLineColor)
+					.onChange(async (value) => {
+						this.plugin.settings.treeLineColor = value as TreeLineColor;
 						await this.plugin.saveSettings();
 						this.plugin.refreshOutlineView();
 					})

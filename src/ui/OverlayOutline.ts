@@ -97,6 +97,7 @@ export class OverlayOutline {
 		overlay.classList.add(`outline-font-${this.plugin.settings.labelFont}`);
 		overlay.classList.add(`outline-hierarchy-${this.plugin.settings.labelHierarchy}`);
 		if (this.plugin.settings.labelsAlwaysOn) overlay.classList.add('outline-labels-always-on');
+		overlay.classList.add(`outline-tree-lines-${this.plugin.settings.treeLineColor}`);
 
 		const animate = this.plugin.settings.animationsEnabled;
 		if (!animate) overlay.classList.add('outline-no-anim');
@@ -179,11 +180,16 @@ export class OverlayOutline {
 			// automatically — no manual copy needed, and it animates in sync with
 			// the row's label regardless of whether stagger is on or off.
 			const line = parentRow.createDiv({ cls: 'outline-tree-line' });
+			let matchColor = '';
+			if (this.plugin.settings.treeLineColor === 'match') {
+				const label = parentRow.querySelector<HTMLElement>('.outline-label');
+				if (label) matchColor = `background-color: ${getComputedStyle(label).color};`;
+			}
 			const transform = isRight
 				? 'translateX(var(--label-nudge))'
 				: 'translateX(calc(-1 * var(--label-nudge)))';
 			const side = isRight ? `right: ${offsetFromEdge}px` : `left: ${offsetFromEdge}px`;
-			line.setAttribute('style', `top: 112%; height: ${lineHeight - 4}px; transform: ${transform}; ${side}`);
+			line.setAttribute('style', `top: 112%; height: ${lineHeight - 4}px; transform: ${transform}; ${side}; ${matchColor}`);
 		}
 	}
 
