@@ -96,12 +96,15 @@ export class OverlayOutline {
 		overlay.classList.add(`outline-size-${this.plugin.settings.markerSize}`);
 		overlay.classList.add(`outline-font-${this.plugin.settings.labelFont}`);
 		overlay.classList.add(`outline-hierarchy-${this.plugin.settings.labelHierarchy}`);
-		if (this.plugin.settings.labelsAlwaysOn) overlay.classList.add('outline-labels-always-on');
+		const { markerVisibility } = this.plugin.settings;
+		if (markerVisibility === 'peek' || markerVisibility === 'hover') overlay.classList.add('outline-markers-auto-reveal');
+		if (this.plugin.settings.labelsAlwaysOn && markerVisibility === 'always') overlay.classList.add('outline-labels-always-on');
 		overlay.classList.add(`outline-tree-lines-${this.plugin.settings.treeLineColor}`);
 
+		const isNewNote = this.animateNextRefresh;
 		const animate = this.plugin.settings.animationsEnabled;
 		if (!animate) overlay.classList.add('outline-no-anim');
-		if (animate && this.animateNextRefresh) overlay.classList.add('outline-animate-in');
+		if (animate && isNewNote) overlay.classList.add('outline-animate-in');
 		this.animateNextRefresh = false;
 
 		if (!view.file) return;
@@ -131,6 +134,17 @@ export class OverlayOutline {
 		this.applyLayout(view);
 		this.buildTreeLines();
 		this.highlightCurrentHeading();
+
+		if (markerVisibility === 'peek' && isNewNote) {
+			overlay.classList.add('outline-peek');
+			// Dedicated class — never reuse outline-labels-always-on, so this leak-prone
+			// once-listener can only ever remove peek-specific classes (harmless in any
+			// other mode if it fires late on the reused overlay element).
+			if (this.plugin.settings.labelsAlwaysOn) overlay.classList.add('outline-peek-labels');
+			overlay.addEventListener('mouseenter', () => {
+				overlay.classList.remove('outline-peek', 'outline-peek-labels');
+			}, { once: true });
+		}
 	}
 
 	// Injects absolutely-positioned vertical line elements that connect each

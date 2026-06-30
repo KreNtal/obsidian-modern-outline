@@ -690,6 +690,70 @@
 	--row-hover-width: 32px;
 }
 
+/* ===== Auto reveal ===== */
+/* Uses filter:opacity() to hide instead of the opacity property, so theme rules
+   that control opacity (hover brightness, active state, etc.) are unaffected.
+   filter:none on hover restores the dash's natural theme appearance. */
+.modern-outline-overlay.outline-markers-auto-reveal .outline-dash {
+	filter: opacity(0);
+	transition: background-color 0.2s ease, opacity 0.2s ease, filter 0.22s ease;
+}
+
+/* Suppress regular dash entry animation; peek rules at (0,5,0) provide their own. */
+.modern-outline-overlay.outline-markers-auto-reveal.overlay-right .outline-dash,
+.modern-outline-overlay.outline-markers-auto-reveal.overlay-left .outline-dash {
+	animation: none;
+}
+
+/* Reveal: remove filter so each dash shows at its natural theme opacity/color. */
+.modern-outline-overlay.outline-markers-auto-reveal:has(.outline-row:hover) .outline-dash {
+	filter: none;
+}
+
+/* Peek: replicates dash entry slide-in via filter+transform, then holds, then fades out.
+   `both` fill mode: holds from-state during stagger delay, holds to-state after end. */
+@keyframes outline-peek-right {
+	0%   { filter: opacity(0); transform: translateX(12px); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+	14%  { filter: opacity(1); transform: translateX(0); }
+	50%  { filter: opacity(1); transform: translateX(0); animation-timing-function: linear; }
+	100% { filter: opacity(0); transform: translateX(0); }
+}
+
+@keyframes outline-peek-left {
+	0%   { filter: opacity(0); transform: translateX(-12px); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+	14%  { filter: opacity(1); transform: translateX(0); }
+	50%  { filter: opacity(1); transform: translateX(0); animation-timing-function: linear; }
+	100% { filter: opacity(0); transform: translateX(0); }
+}
+
+.modern-outline-overlay.outline-markers-auto-reveal.outline-peek.overlay-right .outline-dash {
+	animation: outline-peek-right 2.5s ease both;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.outline-markers-auto-reveal.outline-peek.overlay-left .outline-dash {
+	animation: outline-peek-left 2.5s ease both;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Labels during peek: slide in → hold → fade out, matching the marker peek timing
+   (0–14% slide, 14–42% hold, 42–100% long linear fade) so they sync frame-for-frame.
+   The Y stays at -50% throughout since labels are vertically centered. The matching
+   rules live after the entry-animation rules (same specificity) so cascade lets them win. */
+@keyframes outline-peek-label-right {
+	0%   { opacity: 0; transform: translate(var(--label-nudge), -50%); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+	14%  { opacity: 1; transform: translate(0, -50%); }
+	50%  { opacity: 1; transform: translate(0, -50%); animation-timing-function: linear; }
+	100% { opacity: 0; transform: translate(0, -50%); }
+}
+
+@keyframes outline-peek-label-left {
+	0%   { opacity: 0; transform: translate(calc(-1 * var(--label-nudge)), -50%); animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+	14%  { opacity: 1; transform: translate(0, -50%); }
+	50%  { opacity: 1; transform: translate(0, -50%); animation-timing-function: linear; }
+	100% { opacity: 0; transform: translate(0, -50%); }
+}
+
 /* ===== Tree lines ===== */
 /* Absolutely positioned vertical lines that span from a parent heading's midpoint
    to its last child's midpoint. Shown only while the overlay is hovered, fading
@@ -810,6 +874,20 @@
 	animation-delay: calc(var(--i, 0) * var(--stagger));
 }
 
+/* Peek labels: keyed on the dedicated outline-peek-labels class (added only when
+   labels-always-on is enabled). During peek the always-on class is absent, so the
+   entry-animation rules above don't apply and the base label opacity is 0 — the
+   peek animation fully controls the label via its own keyframes + both fill. */
+.modern-outline-overlay.outline-peek.outline-peek-labels.overlay-right .outline-label {
+	animation: outline-peek-label-right 2.5s ease both;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+.modern-outline-overlay.outline-peek.outline-peek-labels.overlay-left .outline-label {
+	animation: outline-peek-label-left 2.5s ease both;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
 .modern-outline-overlay.overlay-right.outline-animate-in.outline-labels-always-on .outline-tree-line {
 	animation: outline-tree-line-in-right var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
 	animation-delay: calc(var(--i, 0) * var(--stagger));
@@ -817,5 +895,25 @@
 
 .modern-outline-overlay.overlay-left.outline-animate-in.outline-labels-always-on .outline-tree-line {
 	animation: outline-tree-line-in-left var(--anim-in-duration) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+	animation-delay: calc(var(--i, 0) * var(--stagger));
+}
+
+/* Peek for tree lines: opacity-only animation. The JS sets an inline transform (the
+   hover nudge) on each line; force translateX(0) here so they sit in place during peek
+   (the always-on rule that normally did this is absent in peek mode). */
+@keyframes outline-peek-tree-line {
+	0%   { opacity: 0; }
+	14%  { opacity: 0.45; }
+	50%  { opacity: 0.45; animation-timing-function: linear; }
+	100% { opacity: 0; }
+}
+
+.modern-outline-overlay.outline-peek.outline-peek-labels .outline-tree-line {
+	transform: translateX(0) !important;
+}
+
+.modern-outline-overlay.outline-peek.outline-peek-labels.overlay-right .outline-tree-line,
+.modern-outline-overlay.outline-peek.outline-peek-labels.overlay-left .outline-tree-line {
+	animation: outline-peek-tree-line 2.5s ease both;
 	animation-delay: calc(var(--i, 0) * var(--stagger));
 }

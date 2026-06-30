@@ -8,6 +8,7 @@ export type LabelFont = 'default' | 'text' | 'mono';
 export type HighlightColor = 'accent' | 'monochrome' | 'colorful' | 'headings' | 'match';
 export type LabelHierarchy = 'none' | 'indent' | 'size' | 'indent+size';
 export type TreeLineColor = 'monochrome' | 'accent' | 'match';
+export type MarkerVisibility = 'always' | 'peek' | 'hover';
 
 export interface ModernOutlineSettings {
 	sidebarSide: 'left' | 'right';
@@ -19,6 +20,7 @@ export interface ModernOutlineSettings {
 	markerSize: DashSize;
 	labelFont: LabelFont;
 	labelHierarchy: LabelHierarchy;
+	markerVisibility: MarkerVisibility;
 	labelsAlwaysOn: boolean;
 	treeLines: boolean;
 	treeLineColor: TreeLineColor;
@@ -37,6 +39,7 @@ export const DEFAULT_SETTINGS: ModernOutlineSettings = {
 	markerSize: 'medium',
 	labelFont: 'default',
 	labelHierarchy: 'none',
+	markerVisibility: 'always',
 	labelsAlwaysOn: false,
 	treeLines: false,
 	treeLineColor: 'monochrome',
@@ -106,6 +109,22 @@ export class ModernOutlineSettingTab extends PluginSettingTab {
 
 		// ── Markers ─────────────────────────────────────────────────────────
 		new Setting(containerEl).setName('Markers').setHeading();
+
+		new Setting(containerEl)
+			.setName('Marker visibility')
+			.setDesc('When markers are shown in the outline')
+			.addDropdown(drop =>
+				drop
+					.addOption('always', 'Always visible')
+					.addOption('peek', 'Peek')
+					.addOption('hover', 'Reveal on hover')
+					.setValue(this.plugin.settings.markerVisibility)
+					.onChange(async (value) => {
+						this.plugin.settings.markerVisibility = value as MarkerVisibility;
+						await this.plugin.saveSettings();
+						this.plugin.refreshOutlineView();
+					})
+			);
 
 		new Setting(containerEl)
 			.setName('Style')
