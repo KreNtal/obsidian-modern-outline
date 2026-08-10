@@ -352,6 +352,11 @@
 
 /* --- Label color --- */
 
+/* Monochrome: all inactive labels use the same light gray as markers */
+.modern-outline-overlay.outline-label-monochrome .outline-label {
+    color: var(--text-faint);
+}
+
 /* Accent: all labels in the accent color (hierarchy still read via weight). */
 .modern-outline-overlay.outline-label-accent .outline-label {
 	color: var(--color-accent);
